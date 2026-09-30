@@ -1,0 +1,4 @@
+[
+  {"puuid": "fixture-puuid-0000000000000000000000000000000000000000000000000000000000000000", "leagueId": "fixture-league", "queueType": "RANKED_TFT_TURBO", "ratedTier": "BLUE", "ratedRating": 1200, "wins": 3, "losses": 5},
+  {"puuid": "fixture-puuid-0000000000000000000000000000000000000000000000000000000000000000", "leagueId": "fixture-league-2", "queueType": "RANKED_TFT", "tier": "DIAMOND", "rank": "II", "leaguePoints": 42, "wins": 30, "losses": 70, "veteran": false, "inactive": false, "freshBlood": false, "hotStreak": false}
+]
