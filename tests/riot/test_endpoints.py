@@ -80,3 +80,18 @@ class LeagueAndSummonerTests(unittest.TestCase):
         with FakeRiot().add(f"/tft/summoner/v1/summoners/by-puuid/{PUUID}", {"puuid": PUUID}) as riot:
             SummonerService(client(platform="kr", region="asia")).by_puuid(PUUID)
         self.assertEqual(riot.calls[0]["host"], "kr.api.riotgames.com")
+
+    def test_apex_league_response_is_untouched(self):
+        body = b'{"tier": "GRANDMASTER",  "entries": [{"puuid": "p", "leaguePoints": 700}]}'
+        with FakeRiot().add("/tft/league/v1/grandmaster", body) as riot:
+            resp = LeagueService(client()).apex_response("grandmaster")
+        self.assertEqual(resp.body, body)
+        self.assertEqual(riot.calls[0]["host"], "na1.api.riotgames.com")
+        with self.assertRaises(ValueError):
+            LeagueService(client()).apex_response("diamond")
+
+    def test_summoner_id_to_puuid(self):
+        with FakeRiot().add("/tft/summoner/v1/summoners/enc/id", {"puuid": PUUID}) as riot:
+            self.assertEqual(SummonerService(client()).by_id("enc/id")["puuid"], PUUID)
+        self.assertEqual(riot.calls[0]["raw_path"], "/tft/summoner/v1/summoners/enc%2Fid")
+        self.assertEqual(riot.calls[0]["host"], "na1.api.riotgames.com")

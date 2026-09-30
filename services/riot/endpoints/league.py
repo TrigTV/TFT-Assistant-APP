@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ..client import RiotClient
+from ..client import RiotClient, RiotResponse
 
 RANKED_QUEUE = "RANKED_TFT"
 
@@ -21,6 +21,10 @@ class LeagueService:
             if entry.get("queueType") == RANKED_QUEUE:
                 return entry
         return None
+
+    def apex_response(self, tier: str) -> RiotResponse:
+        """The untouched challenger/grandmaster/master league, for saving as received."""
+        return self._client.apex_league(tier)
 
     def challenger(self) -> dict:
         return self._client.challenger_league()

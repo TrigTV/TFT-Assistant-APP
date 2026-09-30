@@ -80,6 +80,8 @@ class RiotClient:
         self.config = config
         self._sleep = sleep
         self._backoff_base = backoff_base
+        self.request_count = 0  # every attempt sent, retries included
+        self.retry_count = 0
         limiter = BasicRateLimiter()  # shared by all three so limits are counted together
         deserializer = _RawDeserializer()
         kw = dict(timeout=config.timeout, rate_limiter=limiter, deserializer=deserializer)
@@ -136,18 +138,31 @@ class RiotClient:
         return self._call("tft-league-v1.by_puuid", self._extras.league_by_puuid,
                           self._platform, _seg(puuid)).json()
 
+    def apex_league(self, tier: str) -> RiotResponse:
+        """The untouched challenger, grandmaster or master league response."""
+        fns = {"challenger": self._tft.league.challenger, "grandmaster": self._tft.league.grandmaster,
+               "master": self._tft.league.master}
+        if tier not in fns:
+            raise ValueError(f"Unknown apex tier {tier!r}; expected one of {', '.join(fns)}")
+        return self._call(f"tft-league-v1.{tier}", fns[tier], self._platform)
+
     def challenger_league(self) -> dict:
-        return self._call("tft-league-v1.challenger", self._tft.league.challenger, self._platform).json()
+        return self.apex_league("challenger").json()
 
     def grandmaster_league(self) -> dict:
-        return self._call("tft-league-v1.grandmaster", self._tft.league.grandmaster, self._platform).json()
+        return self.apex_league("grandmaster").json()
 
     def master_league(self) -> dict:
-        return self._call("tft-league-v1.master", self._tft.league.master, self._platform).json()
+        return self.apex_league("master").json()
 
     def summoner_by_puuid(self, puuid: str) -> dict:
         return self._call("tft-summoner-v1.by_puuid", self._tft.summoner.by_puuid,
                           self._platform, _seg(puuid)).json()
+
+    def summoner_by_id(self, summoner_id: str) -> dict:
+        """For league entries that carry a summonerId but no puuid."""
+        return self._call("tft-summoner-v1.by_id", self._tft.summoner.by_id,
+                          self._platform, _seg(summoner_id)).json()
 
     def platform_status(self) -> dict:
         return self._call("tft-status-v1.platform_data", self._extras.platform_data, self._platform).json()
@@ -157,6 +172,7 @@ class RiotClient:
     def _call(self, name: str, fn, *args, **kwargs) -> RiotResponse:
         attempt = 0
         while True:
+            self.request_count += 1
             started = time.monotonic()
             try:
                 resp = fn(*args, **kwargs)
@@ -176,6 +192,7 @@ class RiotClient:
                         log.warning("riot 429 on %s (%s limit); retrying", name,
                                     r.headers.get("X-Rate-Limit-Type", "service"))
                         attempt += 1
+                        self.retry_count += 1
                         continue
                     raise RiotRateLimited("Riot API rate limit exceeded after retries.",
                                           status=429, url=url, retry_after=retry_after) from e
@@ -183,6 +200,7 @@ class RiotClient:
                     delay = self._backoff(attempt)
                     log.warning("riot %s on %s; retrying in %.1fs", status, name, delay)
                     attempt += 1
+                    self.retry_count += 1
                     self._sleep(delay)
                     continue
                 text = r.text if r is not None else ""
@@ -193,6 +211,7 @@ class RiotClient:
                     log.warning("riot network error on %s (%s); retrying in %.1fs",
                                 name, type(e).__name__, delay)
                     attempt += 1
+                    self.retry_count += 1
                     self._sleep(delay)
                     continue
                 raise RiotNetworkError(f"Could not reach Riot API ({name}): {type(e).__name__}") from e

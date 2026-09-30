@@ -64,6 +64,7 @@ class RetryTests(unittest.TestCase):
             self.assertEqual(client.platform_status(), {"ok": True})
         self.assertEqual(len(riot.calls), 3)
         self.assertEqual(sleeps, [1.0, 2.0])
+        self.assertEqual((client.request_count, client.retry_count), (3, 2))
 
     def test_5xx_gives_up(self):
         with FakeRiot().add(STATUS, status=502) as riot:

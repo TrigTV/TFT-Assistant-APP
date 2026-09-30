@@ -31,14 +31,19 @@ class RawMatchStore:
 
     def save_bytes(self, match_id: str, body: bytes) -> Path:
         """Write atomically so a crash never leaves a half-written match behind."""
-        path = self.path_for(match_id)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{match_id}.", suffix=".tmp")
-        try:
-            with os.fdopen(fd, "wb") as f:
-                f.write(body)
-            os.replace(tmp, path)
-        except BaseException:
-            Path(tmp).unlink(missing_ok=True)
-            raise
-        return path
+        return atomic_write(self.path_for(match_id), body)
+
+
+def atomic_write(path: str | os.PathLike, data: bytes) -> Path:
+    """Write through a temp file and rename, so readers never see a partial file."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.stem}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+    return path
