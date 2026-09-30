@@ -1,0 +1,39 @@
+{
+    "metadata": {
+        "data_version": "6",
+        "match_id": "NA1_5000000003",
+        "participants": ["fixture-puuid-0000000000000000000000000000000000000000000000000000000000000000", "fixture-puuid-other"]
+    },
+    "info": {
+        "endOfGameResult": "GameComplete",
+        "gameCreation": 1759200000000,
+        "gameId": 5000000003,
+        "game_datetime": 1759202000000,
+        "game_length": 2140.5,
+        "game_version": "Linux Version 15.19.000.0000",
+        "mapId": 22,
+        "participants": [
+            {
+                "companion": {"content_ID": "fixture", "item_ID": 1, "skin_ID": 1, "species": "PetTFTAvatar"},
+                "gold_left": 3,
+                "last_round": 33,
+                "level": 9,
+                "placement": 1,
+                "players_eliminated": 2,
+                "puuid": "fixture-puuid-0000000000000000000000000000000000000000000000000000000000000000",
+                "riotIdGameName": "Aman",
+                "riotIdTagline": "NA1",
+                "time_eliminated": 2140.5,
+                "total_damage_to_players": 150,
+                "traits": [{"name": "TFT_FixtureTrait", "num_units": 4, "style": 2, "tier_current": 2, "tier_total": 3}],
+                "units": [{"character_id": "TFT_FixtureUnit", "itemNames": ["TFT_Item_FixtureItem"], "name": "", "rarity": 4, "tier": 2}],
+                "win": true
+            }
+        ],
+        "queue_id": 1100,
+        "queueId": 1100,
+        "tft_game_type": "standard",
+        "tft_set_core_name": "TFTSet_Fixture",
+        "tft_set_number": 99
+    }
+}
