@@ -41,6 +41,19 @@ def load_dotenv(path: str | os.PathLike = ".env", *, override: bool = False) -> 
             os.environ[key] = value
 
 
+def _read_key_file(env_file: str | os.PathLike | None) -> str:
+    """Return the key stored in RIOT_API_KEY_FILE, or "" if that variable is unset."""
+    name = os.environ.get("RIOT_API_KEY_FILE", "").strip()
+    if not name:
+        return ""
+    p = Path(name).expanduser()
+    if not p.is_absolute() and env_file is not None:
+        p = Path(env_file).resolve().parent / p
+    if not p.is_file():
+        raise RiotConfigError(f"RIOT_API_KEY_FILE points to '{p}', which does not exist.")
+    return p.read_text(encoding="utf-8").strip()
+
+
 @dataclass(frozen=True)
 class RiotConfig:
     api_key: str = field(repr=False)
@@ -73,11 +86,15 @@ class RiotConfig:
 
     @classmethod
     def from_env(cls, env_file: str | os.PathLike | None = ".env") -> "RiotConfig":
-        """Build config from environment variables (after loading .env if present)."""
+        """Build config from environment variables (after loading .env if present).
+
+        If RIOT_API_KEY is empty, the key is read from the file named by
+        RIOT_API_KEY_FILE. A relative path is resolved against the .env file's folder.
+        """
         if env_file is not None:
             load_dotenv(env_file)
         return cls(
-            api_key=os.environ.get("RIOT_API_KEY", ""),
+            api_key=os.environ.get("RIOT_API_KEY") or _read_key_file(env_file),
             platform=os.environ.get("RIOT_PLATFORM", DEFAULT_PLATFORM),
             region=os.environ.get("RIOT_REGION", DEFAULT_REGION),
         )

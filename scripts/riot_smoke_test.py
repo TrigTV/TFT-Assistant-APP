@@ -56,7 +56,11 @@ def run(riot_id: str, client: RiotClient, store: RawMatchStore, out=sys.stdout) 
 
     _print(rows, out)
     print(f"\nPlayer: {account['gameName']}#{account['tagLine']}", file=out)
-    print(f"Saved:  {os.path.relpath(path, ROOT)}", file=out)
+    try:
+        shown = os.path.relpath(path, ROOT)
+    except ValueError:  # Windows: path is on a different drive than the repo
+        shown = path
+    print(f"Saved:  {shown}", file=out)
     print("\nRiot API ready.", file=out)
     return True
 

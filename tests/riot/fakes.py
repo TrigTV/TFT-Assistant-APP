@@ -6,6 +6,7 @@ RiotClient -> Riot Watcher -> requests stack and only the network is faked.
 
 from __future__ import annotations
 
+import importlib
 import json
 from pathlib import Path
 from unittest import mock
@@ -74,8 +75,10 @@ class FakeRiot:
         self._patches = [
             mock.patch("requests.adapters.HTTPAdapter.send",
                        lambda adapter, request, **kw: fake._send(adapter, request, **kw)),
-            mock.patch("riotwatcher.Handlers.RateLimiterAdapter.time",
-                       mock.Mock(sleep=self.riotwatcher_sleeps.append)),
+            # Patch the module, not the same-named class riotwatcher.Handlers re-exports
+            # (on Python 3.10, mock.patch's dotted lookup finds the class).
+            mock.patch.object(importlib.import_module("riotwatcher.Handlers.RateLimiterAdapter"),
+                              "time", mock.Mock(sleep=self.riotwatcher_sleeps.append)),
         ]
         for p in self._patches:
             p.start()

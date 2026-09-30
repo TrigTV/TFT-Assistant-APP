@@ -225,3 +225,6 @@ storage/raw/*
 storage/processed/*
 storage/models/*
 !storage/**/.gitkeep
+
+# Riot API key file (see RIOT_API_KEY_FILE in .env)
+riot_api_key.txt
