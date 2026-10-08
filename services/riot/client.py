@@ -145,6 +145,10 @@ class RiotClient:
     def master_league(self) -> dict:
         return self._call("tft-league-v1.master", self._tft.league.master, self._platform).json()
 
+    def summoner_by_id(self, summoner_id: str) -> dict:
+        return self._call("tft-summoner-v1.by_id", self._tft.summoner.by_id,
+                          self._platform, _seg(summoner_id)).json()
+
     def summoner_by_puuid(self, puuid: str) -> dict:
         return self._call("tft-summoner-v1.by_puuid", self._tft.summoner.by_puuid,
                           self._platform, _seg(puuid)).json()

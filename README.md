@@ -36,6 +36,39 @@ python -m pip install -r requirements.txt
    One match is saved untouched to `storage/raw/riot/matches/<MATCH_ID>.json`.
    Add `-v` to log each request. A `403` prints the "key may have expired" message.
 
+## Collecting a raw match archive (Milestone 2)
+
+Run a small test first, then the full collection:
+
+```
+python scripts/collect_matches.py --players 5 --matches 5
+python scripts/collect_matches.py                 # 50 players x 20 recent matches
+```
+
+It reads the Challenger and Grandmaster ladders and takes the top players by
+tier, then LP. It pulls each player's recent match IDs and deduplicates them
+before downloading anything, then downloads each match it doesn't already have
+exactly once. Nothing is normalized or analyzed.
+
+| Output | Contents |
+|---|---|
+| `storage/raw/riot/matches/<MATCH_ID>.json` | Riot's response, byte-for-byte |
+| `storage/raw/riot/manifest.jsonl` | One line per match: run, collected_at, source player and tier, patch, game_version, queue, set, sha256 |
+| `storage/raw/riot/collections/` | `active.json` while a run is unfinished; `<run_id>.json` once it's done |
+
+The run saves its progress after every player and every match. If it stops for
+any reason (Ctrl+C, an expired key, a crash), run the same command again to
+resume. Matches already saved are never requested twice. `--fresh` sets an
+unfinished run aside and starts a new one. A request that keeps failing with a
+429, a 5xx or a network error is retried in three places: by the client with
+backoff, in a second pass at the end of the run, and on the next run. A 404 is
+recorded and not retried.
+
+With a development key (100 requests per 2 minutes), 50 x 20 takes about 15
+minutes. Some matches report `game_version` as `TFT Unreal Version ?.?.?.?`,
+which has no patch number; for those, `patch` is `null` and `tft_set_number`
+is still recorded.
+
 ## Production key
 
 Replace the value of `RIOT_API_KEY` in the environment. Nothing else changes:
@@ -66,6 +99,8 @@ Replacing Riot Watcher later means rewriting `client.py` only.
 | `endpoints/` | `AccountService`, `MatchService`, `LeagueService`, `SummonerService`, `StatusService` |
 | `raw_store.py` | Raw match JSON on disk, keyed by match ID (the cache boundary) |
 | `pipeline.py` | First data flow: Riot ID to saved raw matches, skipping ones already on disk |
+| `collector.py` | Milestone 2: ladder players to a deduplicated, resumable raw match archive |
+| `manifest.py` | Collection metadata kept beside the raw files (`manifest.jsonl`) |
 
 Usage:
 
